@@ -1,0 +1,169 @@
+{
+  "name": "My workflow 3",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "e015e71c-ffa7-4b8b-a623-293581e1832b",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "2511f908-38c6-40dc-b7e7-d6dc82e3430b",
+      "name": "Webhook",
+      "webhookId": "e015e71c-ffa7-4b8b-a623-293581e1832b"
+    },
+    {
+      "parameters": {
+        "jsCode": "const email = $input.first().json.query.email || \"\";\nconst isPersonal = email.includes(\"gmail.com\") || email.includes(\"yahoo.com\");\n\nreturn [\n  {\n    json: {\n      name: $input.first().json.query.name,\n      email: email,\n      message: $input.first().json.query.message,\n      company_type: isPersonal ? \"Personal\" : \"Corporate\"\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "a5219a31-b565-4af6-a462-40a0313200bc",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Read this customer inquiry and classify their priority as ONLY \"High Priority\" or \"Low Priority\" in two words. Inquiry: {{ $json.message }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        448,
+        0
+      ],
+      "id": "72d2acd3-24a9-4a92-88a3-1d01d4a24207",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-20b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        384,
+        208
+      ],
+      "id": "e3ceb107-887f-4f93-b310-ec667f5e9dbf",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "euOUZLNA4U83xPTG",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "projectRef": "cktravrnkstetuuahkcz",
+        "tableId": "leads",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "name",
+              "fieldValue": "={{ $('Code in JavaScript').item.json.name }}"
+            },
+            {
+              "fieldId": "email",
+              "fieldValue": "={{ $('Code in JavaScript').item.json.email }}"
+            },
+            {
+              "fieldId": "company_type",
+              "fieldValue": "={{ $('Code in JavaScript').item.json.company_type }}"
+            },
+            {
+              "fieldId": "priority",
+              "fieldValue": "={{ $json.text }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        816,
+        0
+      ],
+      "id": "dd6a5414-9378-4816-9490-5faef2bb3d97",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseOAuth2Api": {
+          "id": "RfpqijuIFagvluTg",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "f9ea20e2-03ae-4d58-9922-a6dcbfb7c2c6",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a21e41de6aa7ad9ab2cde817895f5e20d948ae3462916c27dc2dd5c6d4467a58"
+  },
+  "nodeGroups": [],
+  "id": "90YdZQFOKCnqvnv8",
+  "tags": []
+}
